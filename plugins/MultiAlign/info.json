@@ -1,20 +1,26 @@
 {
-    "type": "Standard",
-    "core": true,
-    "name": "MultiCloud Alignment",
-    "icon": ":/CC/plugin/MultiAlign/icon.png",
-    "description": "Align multiple point clouds using sequential ICP steps.",
-    "authors": [
-        { "name": "Your Name" }
-    ],
-    "references": [
-        {
-            "text": "ICP: Besl, P.J.; McKay, N.D., 'A Method for Registration of 3-D Shapes', TPAMI 1992",
-            "url": "https://ieeexplore.ieee.org/document/121791"
-        },
-        {
-            "text": "CloudCompare Documentation",
-            "url": "https://www.cloudcompare.org/doc"
-        }
-    ]
+  "type": "Standard",
+  "core": true,
+  "name": "MultiCloud Alignment",
+  "icon": ":/CC/plugin/MultiAlign/icon.png",
+  "description": "Align multiple point clouds using sequential ICP steps.",
+  "authors": [
+    {
+      "name": "Your Name"
+    }
+  ],
+  "references": [
+    {
+      "text": "ICP: Besl, P.J.; McKay, N.D., 'A Method for Registration of 3-D Shapes', TPAMI 1992",
+      "url": "https://ieeexplore.ieee.org/document/121791"
+    },
+    {
+      "text": "CloudCompare Documentation",
+      "url": "https://www.cloudcompare.org/doc"
+    },
+    {
+      "text": "Open3D Fast Global Registration",
+      "url": "https://github.com/isl-org/Open3D"
+    }
+  ]
 }

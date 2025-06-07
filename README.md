@@ -12,3 +12,17 @@ The plugin is designed to be compiled as part of CloudCompare's plugin system.
 
 Once compiled and loaded, select several point clouds in CloudCompare and trigger the MultiCloud Alignment action from the Plugins menu.
 The first selected cloud acts as the reference and all other clouds will be aligned to it using the standard ICP algorithm.
+
+## Open3D Example
+
+The `scripts/fgr_multi_align.py` script demonstrates how to perform a fast global
+registration using Open3D's FGR algorithm followed by an ICP refinement. It
+aligns multiple clouds provided as `.ply` files on the command line and prints
+the resulting 4x4 transformation matrices.
+
+```bash
+python scripts/fgr_multi_align.py cloud1.ply cloud2.ply cloud3.ply
+```
+
+This script illustrates how external libraries mentioned in
+`research_methods.md` can complement the basic ICP-based plugin.

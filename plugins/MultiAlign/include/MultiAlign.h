@@ -8,7 +8,8 @@ class QAction;
 class MultiAlignPlugin : public QObject, public ccStdPluginInterface
 {
     Q_OBJECT
-    Q_INTERFACES(ccStdPluginInterface)
+    Q_INTERFACES(ccPluginInterface ccStdPluginInterface)
+    Q_PLUGIN_METADATA(IID "cccorp.cloudcompare.plugin.MultiAlign" FILE "../info.json")
 
 public:
     explicit MultiAlignPlugin(QObject* parent = nullptr);
@@ -23,9 +24,11 @@ public:
 
 private slots:
     void doAction();
+    void doFgrAction();
 
 private:
     QAction* m_action;
+    QAction* m_fgrAction;
 };
 
 #endif // MULTI_ALIGN_PLUGIN_H
