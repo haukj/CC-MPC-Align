@@ -83,3 +83,6 @@ python scripts/fgr_multi_align.py cloud1.ply cloud2.ply cloud3.ply
 
 This script illustrates how external libraries mentioned in
 `research_methods.md` can complement the basic ICP-based plugin.
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
