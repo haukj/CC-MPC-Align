@@ -48,6 +48,9 @@ cmake --build . --config Release
 ```
 
 The resulting `MultiAlignPlugin.so` will be located in `build/plugins/`.
+Running `cmake --install .` installs the plugin and copies the helper script
+`fgr_multi_align.py` to `<install prefix>/plugins/MultiAlign/scripts` so the
+FGR Global Align action can locate it at runtime.
 
 ## Usage
 
