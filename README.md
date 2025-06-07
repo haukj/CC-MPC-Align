@@ -31,10 +31,31 @@ The plugin is designed to be compiled as part of CloudCompare's plugin system.
    ```
 5. The resulting CloudCompare.app will contain the plugin in `Contents/MacOS/plugins`.
 
+### Building the plugin standalone
+
+If you already have a compiled CloudCompare available, the plugin can be built on
+its own. Set the `CLOUDCOMPARE_DIR` environment variable to point at your
+CloudCompare installation and provide Qt through `CMAKE_PREFIX_PATH`:
+
+```bash
+export CLOUDCOMPARE_DIR=/path/to/CloudCompare
+export CMAKE_PREFIX_PATH=/path/to/Qt/lib/cmake
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release \
+  -DCLOUDCOMPARE_DIR="$CLOUDCOMPARE_DIR" \
+  -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"
+cmake --build . --config Release
+```
+
+The resulting `MultiAlignPlugin.so` will be located in `build/plugins/`.
+
 ## Usage
 
 Once compiled and loaded, select several point clouds in CloudCompare and trigger the MultiCloud Alignment action from the Plugins menu.
 The first selected cloud acts as the reference and all other clouds will be aligned to it using the standard ICP algorithm.
+If the dialog's **Save transformations to file** option is checked, all resulting
+4x4 matrices (including the identity for the reference cloud) are written to
+`alignment_transforms.txt` next to the application binary.
 
 ## Open3D Example
 
