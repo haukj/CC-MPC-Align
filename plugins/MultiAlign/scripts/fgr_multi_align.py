@@ -14,9 +14,7 @@ def preprocess(pcd, voxel_size):
     return pcd_down, fpfh
 
 
-def align_pair(source, target, voxel_size):
-    s_down, s_fpfh = preprocess(source, voxel_size)
-    t_down, t_fpfh = preprocess(target, voxel_size)
+def align_pair(source, target, s_down, t_down, s_fpfh, t_fpfh, voxel_size):
     result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
         s_down, t_down, s_fpfh, t_fpfh,
         o3d.pipelines.registration.FastGlobalRegistrationOption(
@@ -39,14 +37,28 @@ if __name__ == "__main__":
         voxel = 0.05
         paths = sys.argv[1:]
 
-    clouds = [o3d.io.read_point_cloud(p) for p in paths]
+    clouds = []
+    downs = []
+    feats = []
+    for p in paths:
+        pc = o3d.io.read_point_cloud(p)
+        if pc.is_empty():
+            print(f"Failed to read {p}", file=sys.stderr)
+            sys.exit(1)
+        clouds.append(pc)
+        d, f = preprocess(pc, voxel)
+        downs.append(d)
+        feats.append(f)
+
     base = clouds[0]
+    base_down = downs[0]
+    base_feat = feats[0]
+
     transforms = [np.eye(4)]
-    for cloud in clouds[1:]:
-        T = align_pair(cloud, base, voxel)
+    for cloud, d, f in zip(clouds[1:], downs[1:], feats[1:]):
+        T = align_pair(cloud, base, d, base_down, f, base_feat, voxel)
         cloud.transform(T)
         transforms.append(T)
-        base += cloud
 
     for T in transforms:
         flat = " ".join(f"{v:.6f}" for v in T.flatten())
