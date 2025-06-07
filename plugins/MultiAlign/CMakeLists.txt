@@ -33,3 +33,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/plugins"
   SUFFIX ".so"
 )
+
+install(TARGETS ${PROJECT_NAME}
+  LIBRARY DESTINATION plugins
+)
+
+install(PROGRAMS scripts/fgr_multi_align.py
+  DESTINATION plugins/MultiAlign/scripts
+)
