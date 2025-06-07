@@ -49,4 +49,9 @@ double MultiAlignTool::voxelSize() const
     return ui->voxelSpinBox->value();
 }
 
+bool MultiAlignTool::saveTransforms() const
+{
+    return ui->saveCheckBox->isChecked();
+}
+
 // EOF

@@ -11,6 +11,8 @@
 #include <QProcess>
 #include <QTemporaryDir>
 #include <QCoreApplication>
+#include <QFile>
+#include <QTextStream>
 
 #include <QAction>
 #include <QMainWindow>
@@ -85,6 +87,13 @@ void MultiAlignPlugin::doAction()
         return;
     }
     unsigned maxIter = dlg.maxIterations();
+    bool save = dlg.saveTransforms();
+    QStringList transformLines;
+    // always keep an identity matrix as the first transform (reference)
+    QString identity;
+    for (int i = 0; i < 16; ++i)
+        identity += QString::number(i % 5 == 0 ? 1.0 : 0.0, 'f', 6) + ' ';
+    transformLines << identity.trimmed();
 
     for (ccHObject* obj : selected)
     {
@@ -99,6 +108,28 @@ void MultiAlignPlugin::doAction()
         {
             moving->applyGLTransformation_recursive(&result);
             moving->setDisplay_recursive(refCloud->getDisplay());
+
+            QString line;
+            const float* data = result.data();
+            for (int i = 0; i < 16; ++i)
+                line += QString::number(static_cast<double>(data[i]), 'f', 6) + ' ';
+            transformLines << line.trimmed();
+        }
+    }
+
+    if (save)
+    {
+        QString path = QCoreApplication::applicationDirPath() + QLatin1String("/alignment_transforms.txt");
+        QFile file(path);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            QTextStream out(&file);
+            for (const QString& l : transformLines)
+                out << l << '\n';
+        }
+        else
+        {
+            m_app->dispToConsole(QStringLiteral("Failed to write %1").arg(path), ccMainAppInterface::WRN_CONSOLE_MESSAGE);
         }
     }
 
@@ -130,6 +161,8 @@ void MultiAlignPlugin::doFgrAction()
     }
 
     double voxel = dlg.voxelSize();
+    bool save = dlg.saveTransforms();
+    QStringList transformLines;
 
     QTemporaryDir tempDir;
     if (!tempDir.isValid())
@@ -171,7 +204,14 @@ void MultiAlignPlugin::doFgrAction()
         return;
     }
 
-    QList<QByteArray> lines = proc.readAllStandardOutput().split('\n');
+    QList<QByteArray> rawOutput = proc.readAllStandardOutput().split('\n');
+    for (const QByteArray& line : rawOutput)
+    {
+        QString trimmed = QString::fromUtf8(line).trimmed();
+        if (!trimmed.isEmpty())
+            transformLines << trimmed;
+    }
+
     int idx = 0;
     for (ccHObject* obj : selected)
     {
@@ -185,10 +225,11 @@ void MultiAlignPlugin::doFgrAction()
             continue;
         }
 
-        if (idx >= lines.size())
+        if (idx >= transformLines.size())
             break;
 
-        QStringList vals = QString::fromUtf8(lines[idx]).split(' ', Qt::SkipEmptyParts);
+        QString rawLine = transformLines[idx];
+        QStringList vals = rawLine.split(' ', Qt::SkipEmptyParts);
         ++idx;
         if (vals.size() != 16)
             continue;
@@ -200,6 +241,23 @@ void MultiAlignPlugin::doFgrAction()
         ccGLMatrix trans(mat);
         pc->applyGLTransformation_recursive(&trans);
         pc->setDisplay_recursive(refCloud->getDisplay());
+
+    }
+
+    if (save)
+    {
+        QString path = QCoreApplication::applicationDirPath() + QLatin1String("/alignment_transforms.txt");
+        QFile file(path);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            QTextStream out(&file);
+            for (const QString& l : transformLines)
+                out << l << '\n';
+        }
+        else
+        {
+            m_app->dispToConsole(QStringLiteral("Failed to write %1").arg(path), ccMainAppInterface::WRN_CONSOLE_MESSAGE);
+        }
     }
 
     m_app->redrawAll();

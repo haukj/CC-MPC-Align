@@ -46,6 +46,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="saveCheckBox">
+     <property name="text">
+      <string>Save transformations to file</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
       <set>QDialogButtonBox::Ok|QDialogButtonBox::Cancel</set>
