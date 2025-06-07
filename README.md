@@ -5,8 +5,31 @@ This repository contains a sample CloudCompare plugin that demonstrates how to a
 ## Building
 
 The plugin is designed to be compiled as part of CloudCompare's plugin system.
- - Clone CloudCompare and place this repository under the plugins directory or add it as an external plugin.
-- Then enable the MultiAlignPlugin option in CMake and build CloudCompare normally.
+- Clone CloudCompare and place this repository under the `plugins` directory or add it as an external plugin.
+- Then enable the `MultiAlignPlugin` option in CMake and build CloudCompare normally.
+
+### Building on macOS (Apple Silicon)
+
+1. Install the required tools via Homebrew:
+   ```bash
+   brew install cmake qt5 git
+   ```
+2. Fetch CloudCompare 2.14 sources and this repository:
+   ```bash
+   git clone --branch v2.14 https://github.com/CloudCompare/CloudCompare.git
+   cd CloudCompare/plugins
+   git clone <this repo url> CC-MPC-Align
+   ```
+3. Create a build directory and configure with CMake, enabling the plugin:
+   ```bash
+   mkdir ../build && cd ../build
+   cmake -DCMAKE_PREFIX_PATH=$(brew --prefix qt5) -DPLUGIN_MULTIALIGNPLUGIN=ON ..
+   ```
+4. Build CloudCompare as usual:
+   ```bash
+   cmake --build . --target ALL_BUILD --config Release
+   ```
+5. The resulting CloudCompare.app will contain the plugin in `Contents/MacOS/plugins`.
 
 ## Usage
 
