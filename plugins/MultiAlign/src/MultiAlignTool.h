@@ -21,6 +21,7 @@ public:
     ccPointCloud* selectedReference() const;
     unsigned maxIterations() const;
     double voxelSize() const;
+    bool saveTransforms() const;
 
 private:
     Ui::MultiAlignTool* ui;

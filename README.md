@@ -35,6 +35,9 @@ The plugin is designed to be compiled as part of CloudCompare's plugin system.
 
 Once compiled and loaded, select several point clouds in CloudCompare and trigger the MultiCloud Alignment action from the Plugins menu.
 The first selected cloud acts as the reference and all other clouds will be aligned to it using the standard ICP algorithm.
+If the dialog's **Save transformations to file** option is checked, all resulting
+4x4 matrices (including the identity for the reference cloud) are written to
+`alignment_transforms.txt` next to the application binary.
 
 ## Open3D Example
 
