@@ -14,6 +14,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QDir>
+#include <QFileInfo>
 #include <QStandardPaths>
 
 #include <QAction>
@@ -203,7 +204,15 @@ void MultiAlignPlugin::doFgrAction()
         files << path;
     }
 
-    QString script = QCoreApplication::applicationDirPath() + QLatin1String("/../plugins/MultiAlign/scripts/fgr_multi_align.py");
+    QDir pluginDir(QCoreApplication::applicationDirPath());
+    pluginDir.cdUp();
+    QString script = pluginDir.filePath(QStringLiteral("plugins/MultiAlign/scripts/fgr_multi_align.py"));
+    if (!QFileInfo::exists(script))
+    {
+        // fall back to the source tree when running uninstalled
+        QDir srcDir(QFileInfo(__FILE__).absolutePath());
+        script = srcDir.filePath(QStringLiteral("../scripts/fgr_multi_align.py"));
+    }
     QStringList args;
     args << script << QString::number(voxel);
     args.append(files);
