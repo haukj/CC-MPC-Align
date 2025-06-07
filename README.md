@@ -70,6 +70,13 @@ registration using Open3D's FGR algorithm followed by an ICP refinement. It
 aligns multiple clouds provided as `.ply` files on the command line and prints
 the resulting 4x4 transformation matrices.
 
+To run the script, make sure the [Open3D](https://github.com/isl-org/Open3D) Python
+package is installed:
+
+```bash
+pip install open3d
+```
+
 ```bash
 python scripts/fgr_multi_align.py cloud1.ply cloud2.ply cloud3.ply
 ```
