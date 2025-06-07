@@ -34,11 +34,14 @@ The plugin is designed to be compiled as part of CloudCompare's plugin system.
 ### Building the plugin standalone
 
 If you already have a compiled CloudCompare available, the plugin can be built on
-its own. Set the `CLOUDCOMPARE_DIR` environment variable to point at your
-CloudCompare installation and provide Qt through `CMAKE_PREFIX_PATH`:
+its own. Set the `CLOUDCOMPARE_DIR` environment variable to the directory that
+contains `CloudCompareConfig.cmake` and provide Qt through `CMAKE_PREFIX_PATH`.
+This file is typically found in `<install>/lib/cmake/CloudCompare` after
+installing CloudCompare. You can compute the path like so:
 
 ```bash
-export CLOUDCOMPARE_DIR=/path/to/CloudCompare
+CLOUDCOMPARE_INSTALL=/path/to/CloudCompare/install
+export CLOUDCOMPARE_DIR="$CLOUDCOMPARE_INSTALL/lib/cmake/CloudCompare"
 export CMAKE_PREFIX_PATH=/path/to/Qt/lib/cmake
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release \
