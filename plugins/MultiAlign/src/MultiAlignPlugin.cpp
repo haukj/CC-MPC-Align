@@ -4,8 +4,12 @@
 #include <ccPointCloud.h>
 #include <ccHObjectCaster.h>
 #include <ccProgressDialog.h>
-#include <ccOverlayDialog.h>
+#include "MultiAlignTool.h"
 #include <ccRegistrationTools.h>
+#include <FileIOFilter.h>
+
+#include <QProcess>
+#include <QTemporaryDir>
 
 #include <QAction>
 #include <QMainWindow>
@@ -68,27 +72,32 @@ void MultiAlignPlugin::doAction()
         return;
     }
 
-    // choose first cloud as reference
-    ccPointCloud* refCloud = ccHObjectCaster::ToPointCloud(selected.front());
+    MultiAlignTool dlg(m_app->getMainWindow());
+    dlg.setClouds(selected);
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+
+    ccPointCloud* refCloud = dlg.selectedReference();
     if (!refCloud)
     {
-        m_app->dispToConsole("First selected entity is not a point cloud", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+        m_app->dispToConsole("Invalid reference cloud", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
         return;
     }
+    unsigned maxIter = dlg.maxIterations();
 
     ccGLMatrix lastTrans;
     bool first = true;
 
-    for (size_t i = 1; i < selected.size(); ++i)
+    for (ccHObject* obj : selected)
     {
-        ccPointCloud* moving = ccHObjectCaster::ToPointCloud(selected[i]);
-        if (!moving)
+        ccPointCloud* moving = ccHObjectCaster::ToPointCloud(obj);
+        if (!moving || moving == refCloud)
             continue;
 
         CCCoreLib::PointProjectionTools::Transformation transform;
         ccGLMatrix result;
 
-        if (ccRegistrationTools::ICP(moving, refCloud, transform, nullptr, result, true, 100))
+        if (ccRegistrationTools::ICP(moving, refCloud, transform, nullptr, result, true, maxIter))
         {
             moving->applyGLTransformation_recursive(&result);
             moving->setDisplay_recursive(refCloud->getDisplay());
@@ -119,8 +128,86 @@ void MultiAlignPlugin::doFgrAction()
         return;
     }
 
-    m_app->dispToConsole("FGR alignment requires the external Open3D script", ccMainAppInterface::STD_CONSOLE_MESSAGE);
-    // Placeholder: call external script or implement FGR here
+    MultiAlignTool dlg(m_app->getMainWindow());
+    dlg.setClouds(selected);
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+
+    ccPointCloud* refCloud = dlg.selectedReference();
+    if (!refCloud)
+    {
+        m_app->dispToConsole("Invalid reference cloud", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+        return;
+    }
+
+    double voxel = dlg.voxelSize();
+
+    QTemporaryDir tempDir;
+    if (!tempDir.isValid())
+    {
+        m_app->dispToConsole("Failed to create temp directory", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+        return;
+    }
+
+    FileIOFilter::SaveParameters sp;
+    sp.alwaysDisplaySaveDialog = false;
+
+    QStringList files;
+    for (ccHObject* obj : selected)
+    {
+        ccPointCloud* pc = ccHObjectCaster::ToPointCloud(obj);
+        if (!pc)
+            continue;
+        QString path = tempDir.path() + QLatin1Char('/') + pc->getName() + ".ply";
+        FileIOFilter::SaveToFile(pc, path, sp, QStringLiteral("PLY (*.ply)"));
+        files << path;
+    }
+
+    QString script = QCoreApplication::applicationDirPath() + QLatin1String("/../plugins/MultiAlign/scripts/fgr_multi_align.py");
+    QStringList args;
+    args << script << QString::number(voxel);
+    args.append(files);
+
+    QProcess proc;
+    proc.start(QStringLiteral("python3"), args);
+    if (!proc.waitForFinished(-1))
+    {
+        m_app->dispToConsole("Failed to run FGR script", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+        return;
+    }
+
+    QList<QByteArray> lines = proc.readAllStandardOutput().split('\n');
+    int idx = 0;
+    for (ccHObject* obj : selected)
+    {
+        ccPointCloud* pc = ccHObjectCaster::ToPointCloud(obj);
+        if (!pc)
+            continue;
+
+        if (pc == refCloud)
+        {
+            ++idx; // skip reference (identity transform)
+            continue;
+        }
+
+        if (idx >= lines.size())
+            break;
+
+        QStringList vals = QString::fromUtf8(lines[idx]).split(' ', Qt::SkipEmptyParts);
+        ++idx;
+        if (vals.size() != 16)
+            continue;
+
+        double mat[16];
+        for (int i = 0; i < 16; ++i)
+            mat[i] = vals[i].toDouble();
+
+        ccGLMatrix trans(mat);
+        pc->applyGLTransformation_recursive(&trans);
+        pc->setDisplay_recursive(refCloud->getDisplay());
+    }
+
+    m_app->redrawAll();
 }
 
 // EOF

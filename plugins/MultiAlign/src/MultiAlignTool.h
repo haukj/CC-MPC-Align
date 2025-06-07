@@ -1,23 +1,30 @@
 #ifndef MULTI_ALIGN_TOOL_H
 #define MULTI_ALIGN_TOOL_H
 
-#include <ccOverlayDialog.h>
+#include <QDialog>
+#include <ccHObject.h>
+
+#include <vector>
+
+class ccPointCloud;
 
 namespace Ui { class MultiAlignTool; }
 
-class MultiAlignTool : public ccOverlayDialog
+class MultiAlignTool : public QDialog
 {
     Q_OBJECT
 public:
     explicit MultiAlignTool(QWidget* parent = nullptr);
     ~MultiAlignTool();
 
-    void setReferenceCloud(ccPointCloud* cloud);
-    ccPointCloud* getReferenceCloud() const;
+    void setClouds(const ccHObject::Container& clouds);
+    ccPointCloud* selectedReference() const;
+    unsigned maxIterations() const;
+    double voxelSize() const;
 
 private:
     Ui::MultiAlignTool* ui;
-    ccPointCloud* m_refCloud;
+    std::vector<ccPointCloud*> m_clouds;
 };
 
 #endif // MULTI_ALIGN_TOOL_H
