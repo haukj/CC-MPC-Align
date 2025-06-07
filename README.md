@@ -34,11 +34,14 @@ The plugin is designed to be compiled as part of CloudCompare's plugin system.
 ### Building the plugin standalone
 
 If you already have a compiled CloudCompare available, the plugin can be built on
-its own. Set the `CLOUDCOMPARE_DIR` environment variable to point at your
-CloudCompare installation and provide Qt through `CMAKE_PREFIX_PATH`:
+its own. Set the `CLOUDCOMPARE_DIR` environment variable to the directory that
+contains `CloudCompareConfig.cmake` and provide Qt through `CMAKE_PREFIX_PATH`.
+This file is typically found in `<install>/lib/cmake/CloudCompare` after
+installing CloudCompare. You can compute the path like so:
 
 ```bash
-export CLOUDCOMPARE_DIR=/path/to/CloudCompare
+CLOUDCOMPARE_INSTALL=/path/to/CloudCompare/install
+export CLOUDCOMPARE_DIR="$CLOUDCOMPARE_INSTALL/lib/cmake/CloudCompare"
 export CMAKE_PREFIX_PATH=/path/to/Qt/lib/cmake
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release \
@@ -51,6 +54,7 @@ The resulting `MultiAlignPlugin.so` will be located in `build/plugins/`.
 Running `cmake --install .` installs the plugin and copies the helper script
 `fgr_multi_align.py` to `<install prefix>/plugins/MultiAlign/scripts` so the
 FGR Global Align action can locate it at runtime.
+
 
 ## Usage
 
@@ -67,9 +71,19 @@ registration using Open3D's FGR algorithm followed by an ICP refinement. It
 aligns multiple clouds provided as `.ply` files on the command line and prints
 the resulting 4x4 transformation matrices.
 
+To run the script, make sure the [Open3D](https://github.com/isl-org/Open3D) Python
+package is installed:
+
+```bash
+pip install open3d
+```
+
 ```bash
 python scripts/fgr_multi_align.py cloud1.ply cloud2.ply cloud3.ply
 ```
 
 This script illustrates how external libraries mentioned in
 `research_methods.md` can complement the basic ICP-based plugin.
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
