@@ -1,12 +1,12 @@
 #include "MultiAlignTool.h"
-#include "ui_multiAlignDlg.h"
+#include "ui_MultiAlignDlg.h"
 
 #include <ccPointCloud.h>
+#include <ccHObjectCaster.h>
 
 MultiAlignTool::MultiAlignTool(QWidget* parent)
-    : ccOverlayDialog(parent, Qt::Tool)
+    : QDialog(parent)
     , ui(new Ui::MultiAlignTool)
-    , m_refCloud(nullptr)
 {
     ui->setupUi(this);
 }
@@ -16,16 +16,37 @@ MultiAlignTool::~MultiAlignTool()
     delete ui;
 }
 
-void MultiAlignTool::setReferenceCloud(ccPointCloud* cloud)
+void MultiAlignTool::setClouds(const ccHObject::Container& clouds)
 {
-    m_refCloud = cloud;
-    if (cloud)
-        ui->refLabel->setText(cloud->getName());
+    ui->refCombo->clear();
+    m_clouds.clear();
+    for (ccHObject* obj : clouds)
+    {
+        ccPointCloud* pc = ccHObjectCaster::ToPointCloud(obj);
+        if (pc)
+        {
+            ui->refCombo->addItem(pc->getName());
+            m_clouds.push_back(pc);
+        }
+    }
 }
 
-ccPointCloud* MultiAlignTool::getReferenceCloud() const
+ccPointCloud* MultiAlignTool::selectedReference() const
 {
-    return m_refCloud;
+    int idx = ui->refCombo->currentIndex();
+    if (idx >= 0 && idx < static_cast<int>(m_clouds.size()))
+        return m_clouds[idx];
+    return nullptr;
+}
+
+unsigned MultiAlignTool::maxIterations() const
+{
+    return static_cast<unsigned>(ui->iterSpinBox->value());
+}
+
+double MultiAlignTool::voxelSize() const
+{
+    return ui->voxelSpinBox->value();
 }
 
 // EOF

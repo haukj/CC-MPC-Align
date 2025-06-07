@@ -28,12 +28,17 @@ def align_pair(source, target, voxel_size):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: fgr_multi_align.py cloud1.ply cloud2.ply [cloud3.ply ...]")
+        print("Usage: fgr_multi_align.py voxel cloud1.ply cloud2.ply [cloud3.ply ...]")
         sys.exit(1)
 
-    paths = sys.argv[1:]
+    try:
+        voxel = float(sys.argv[1])
+        paths = sys.argv[2:]
+    except ValueError:
+        voxel = 0.05
+        paths = sys.argv[1:]
+
     clouds = [o3d.io.read_point_cloud(p) for p in paths]
-    voxel = 0.05
     base = clouds[0]
     transforms = [np.eye(4)]
     for cloud in clouds[1:]:
