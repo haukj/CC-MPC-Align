@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import open3d as o3d
 import numpy as np
 import sys
@@ -49,4 +50,4 @@ if __name__ == "__main__":
 
     for T in transforms:
         flat = " ".join(f"{v:.6f}" for v in T.flatten())
-        print(flat)
+        print(flat, flush=True)
