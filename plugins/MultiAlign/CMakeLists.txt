@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
+
 project(MultiAlignPlugin)
 
 find_package(CloudCompare REQUIRED
-  PATHS ${CLOUDCOMPARE_DIR}
+  PATHS "${CLOUDCOMPARE_DIR}"
   NO_DEFAULT_PATH
 )
 find_package(Qt5Widgets REQUIRED)
