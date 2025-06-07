@@ -14,6 +14,7 @@ MultiAlignPlugin::MultiAlignPlugin(QObject* parent)
     : QObject(parent)
     , ccStdPluginInterface(":/CC/plugin/MultiAlign/info.json")
     , m_action(nullptr)
+    , m_fgrAction(nullptr)
 {
 }
 
@@ -30,12 +31,18 @@ QList<QAction*> MultiAlignPlugin::getActions()
         m_action->setToolTip(getDescription());
         connect(m_action, &QAction::triggered, this, &MultiAlignPlugin::doAction);
     }
-    return { m_action };
+    if (!m_fgrAction)
+    {
+        m_fgrAction = new QAction(tr("FGR Global Align"), this);
+        m_fgrAction->setToolTip(tr("Use Open3D Fast Global Registration"));
+        connect(m_fgrAction, &QAction::triggered, this, &MultiAlignPlugin::doFgrAction);
+    }
+    return { m_action, m_fgrAction };
 }
 
 void MultiAlignPlugin::onNewSelection(const ccHObject::Container& selectedEntities)
 {
-    if (!m_action)
+    if (!m_action || !m_fgrAction)
         return;
 
     unsigned cloudCount = 0;
@@ -44,7 +51,9 @@ void MultiAlignPlugin::onNewSelection(const ccHObject::Container& selectedEntiti
         if (ccHObjectCaster::ToPointCloud(obj))
             ++cloudCount;
     }
-    m_action->setEnabled(cloudCount > 1);
+    bool enabled = cloudCount > 1;
+    m_action->setEnabled(enabled);
+    m_fgrAction->setEnabled(enabled);
 }
 
 void MultiAlignPlugin::doAction()
@@ -96,6 +105,22 @@ void MultiAlignPlugin::doAction()
     }
 
     m_app->redrawAll();
+}
+
+void MultiAlignPlugin::doFgrAction()
+{
+    if (!m_app)
+        return;
+
+    const ccHObject::Container& selected = m_app->getSelectedEntities();
+    if (selected.size() < 2)
+    {
+        m_app->dispToConsole("Select at least two point clouds", ccMainAppInterface::WRN_CONSOLE_MESSAGE);
+        return;
+    }
+
+    m_app->dispToConsole("FGR alignment requires the external Open3D script", ccMainAppInterface::STD_CONSOLE_MESSAGE);
+    // Placeholder: call external script or implement FGR here
 }
 
 // EOF
