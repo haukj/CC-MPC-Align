@@ -29,7 +29,13 @@ target_link_libraries(${PROJECT_NAME}
   Qt5::Widgets
 )
 
+if(APPLE)
+  set(plugin_suffix ".dylib")
+elseif(WIN32)
+  set(plugin_suffix ".dll")
+else()
+  set(plugin_suffix ".so")
+endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/plugins"
-  SUFFIX ".so"
-)
+  SUFFIX "${plugin_suffix}")

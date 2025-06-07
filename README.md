@@ -47,7 +47,8 @@ cmake .. -DCMAKE_BUILD_TYPE=Release \
 cmake --build . --config Release
 ```
 
-The resulting `MultiAlignPlugin.so` will be located in `build/plugins/`.
+The resulting plugin file (`MultiAlignPlugin.dll` on Windows, `.dylib` on macOS,
+`.so` on Linux) will be located in `build/plugins/`.
 
 ## Usage
 
