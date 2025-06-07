@@ -10,6 +10,7 @@
 
 #include <QProcess>
 #include <QTemporaryDir>
+#include <QCoreApplication>
 
 #include <QAction>
 #include <QMainWindow>
@@ -85,9 +86,6 @@ void MultiAlignPlugin::doAction()
     }
     unsigned maxIter = dlg.maxIterations();
 
-    ccGLMatrix lastTrans;
-    bool first = true;
-
     for (ccHObject* obj : selected)
     {
         ccPointCloud* moving = ccHObjectCaster::ToPointCloud(obj);
@@ -101,15 +99,6 @@ void MultiAlignPlugin::doAction()
         {
             moving->applyGLTransformation_recursive(&result);
             moving->setDisplay_recursive(refCloud->getDisplay());
-            if (first)
-            {
-                lastTrans = result;
-                first = false;
-            }
-            else
-            {
-                lastTrans = result * lastTrans;
-            }
         }
     }
 
@@ -170,9 +159,15 @@ void MultiAlignPlugin::doFgrAction()
 
     QProcess proc;
     proc.start(QStringLiteral("python3"), args);
-    if (!proc.waitForFinished(-1))
+    if (!proc.waitForStarted() || !proc.waitForFinished(-1))
     {
         m_app->dispToConsole("Failed to run FGR script", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+        return;
+    }
+    if (proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0)
+    {
+        QString err = QString::fromUtf8(proc.readAllStandardError());
+        m_app->dispToConsole(QStringLiteral("FGR script error: %1").arg(err), ccMainAppInterface::ERR_CONSOLE_MESSAGE);
         return;
     }
 
