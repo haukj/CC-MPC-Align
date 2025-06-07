@@ -13,6 +13,8 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QTextStream>
+#include <QDir>
+#include <QStandardPaths>
 
 #include <QAction>
 #include <QMainWindow>
@@ -88,18 +90,26 @@ void MultiAlignPlugin::doAction()
     }
     unsigned maxIter = dlg.maxIterations();
     bool save = dlg.saveTransforms();
+
+    std::vector<ccPointCloud*> clouds;
+    clouds.push_back(refCloud);
+    for (ccHObject* obj : selected)
+    {
+        ccPointCloud* pc = ccHObjectCaster::ToPointCloud(obj);
+        if (!pc || pc == refCloud)
+            continue;
+        clouds.push_back(pc);
+    }
+
     QStringList transformLines;
-    // always keep an identity matrix as the first transform (reference)
     QString identity;
     for (int i = 0; i < 16; ++i)
         identity += QString::number(i % 5 == 0 ? 1.0 : 0.0, 'f', 6) + ' ';
     transformLines << identity.trimmed();
 
-    for (ccHObject* obj : selected)
+    for (size_t i = 1; i < clouds.size(); ++i)
     {
-        ccPointCloud* moving = ccHObjectCaster::ToPointCloud(obj);
-        if (!moving || moving == refCloud)
-            continue;
+        ccPointCloud* moving = clouds[i];
 
         CCCoreLib::PointProjectionTools::Transformation transform;
         ccGLMatrix result;
@@ -111,15 +121,16 @@ void MultiAlignPlugin::doAction()
 
             QString line;
             const float* data = result.data();
-            for (int i = 0; i < 16; ++i)
-                line += QString::number(static_cast<double>(data[i]), 'f', 6) + ' ';
+            for (int j = 0; j < 16; ++j)
+                line += QString::number(static_cast<double>(data[j]), 'f', 6) + ' ';
             transformLines << line.trimmed();
         }
     }
 
     if (save)
     {
-        QString path = QCoreApplication::applicationDirPath() + QLatin1String("/alignment_transforms.txt");
+        QString path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        path = QDir(path).filePath(QStringLiteral("alignment_transforms.txt"));
         QFile file(path);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text))
         {
@@ -164,6 +175,16 @@ void MultiAlignPlugin::doFgrAction()
     bool save = dlg.saveTransforms();
     QStringList transformLines;
 
+    std::vector<ccPointCloud*> clouds;
+    clouds.push_back(refCloud);
+    for (ccHObject* obj : selected)
+    {
+        ccPointCloud* pc = ccHObjectCaster::ToPointCloud(obj);
+        if (!pc || pc == refCloud)
+            continue;
+        clouds.push_back(pc);
+    }
+
     QTemporaryDir tempDir;
     if (!tempDir.isValid())
     {
@@ -175,11 +196,8 @@ void MultiAlignPlugin::doFgrAction()
     sp.alwaysDisplaySaveDialog = false;
 
     QStringList files;
-    for (ccHObject* obj : selected)
+    for (ccPointCloud* pc : clouds)
     {
-        ccPointCloud* pc = ccHObjectCaster::ToPointCloud(obj);
-        if (!pc)
-            continue;
         QString path = tempDir.path() + QLatin1Char('/') + pc->getName() + ".ply";
         FileIOFilter::SaveToFile(pc, path, sp, QStringLiteral("PLY (*.ply)"));
         files << path;
@@ -191,16 +209,27 @@ void MultiAlignPlugin::doFgrAction()
     args.append(files);
 
     QProcess proc;
-    proc.start(QStringLiteral("python3"), args);
-    if (!proc.waitForStarted() || !proc.waitForFinished(-1))
+    QString cmd = QStringLiteral("python3");
+    proc.start(cmd, args);
+    if (!proc.waitForStarted())
     {
-        m_app->dispToConsole("Failed to run FGR script", ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+        m_app->dispToConsole(QStringLiteral("Failed to start FGR script: %1 %2").arg(cmd, args.join(' ')), ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+        return;
+    }
+    if (!proc.waitForFinished(-1))
+    {
+        m_app->dispToConsole(QStringLiteral("FGR script did not finish"), ccMainAppInterface::ERR_CONSOLE_MESSAGE);
         return;
     }
     if (proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0)
     {
         QString err = QString::fromUtf8(proc.readAllStandardError());
-        m_app->dispToConsole(QStringLiteral("FGR script error: %1").arg(err), ccMainAppInterface::ERR_CONSOLE_MESSAGE);
+        m_app->dispToConsole(QStringLiteral("FGR script failed (code %1): %2\nCommand: %3 %4")
+                                 .arg(proc.exitCode())
+                                 .arg(err.trimmed())
+                                 .arg(cmd)
+                                 .arg(args.join(' ')),
+                             ccMainAppInterface::ERR_CONSOLE_MESSAGE);
         return;
     }
 
@@ -212,41 +241,25 @@ void MultiAlignPlugin::doFgrAction()
             transformLines << trimmed;
     }
 
-    int idx = 0;
-    for (ccHObject* obj : selected)
+    for (size_t i = 1; i < clouds.size() && i < static_cast<size_t>(transformLines.size()); ++i)
     {
-        ccPointCloud* pc = ccHObjectCaster::ToPointCloud(obj);
-        if (!pc)
-            continue;
-
-        if (pc == refCloud)
-        {
-            ++idx; // skip reference (identity transform)
-            continue;
-        }
-
-        if (idx >= transformLines.size())
-            break;
-
-        QString rawLine = transformLines[idx];
-        QStringList vals = rawLine.split(' ', Qt::SkipEmptyParts);
-        ++idx;
+        QStringList vals = transformLines[int(i)].split(' ', Qt::SkipEmptyParts);
         if (vals.size() != 16)
             continue;
 
         double mat[16];
-        for (int i = 0; i < 16; ++i)
-            mat[i] = vals[i].toDouble();
+        for (int j = 0; j < 16; ++j)
+            mat[j] = vals[j].toDouble();
 
         ccGLMatrix trans(mat);
-        pc->applyGLTransformation_recursive(&trans);
-        pc->setDisplay_recursive(refCloud->getDisplay());
-
+        clouds[i]->applyGLTransformation_recursive(&trans);
+        clouds[i]->setDisplay_recursive(refCloud->getDisplay());
     }
 
     if (save)
     {
-        QString path = QCoreApplication::applicationDirPath() + QLatin1String("/alignment_transforms.txt");
+        QString path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        path = QDir(path).filePath(QStringLiteral("alignment_transforms.txt"));
         QFile file(path);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text))
         {
