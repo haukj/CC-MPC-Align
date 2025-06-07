@@ -50,8 +50,10 @@ cmake .. -DCMAKE_BUILD_TYPE=Release \
 cmake --build . --config Release
 ```
 
-The resulting plugin file (`MultiAlignPlugin.dll` on Windows, `.dylib` on macOS,
-`.so` on Linux) will be located in `build/plugins/`.
+The resulting `MultiAlignPlugin.so` will be located in `build/plugins/`.
+Running `cmake --install .` installs the plugin and copies the helper script
+`fgr_multi_align.py` to `<install prefix>/plugins/MultiAlign/scripts` so the
+FGR Global Align action can locate it at runtime.
 
 
 ## Usage
